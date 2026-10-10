@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexora Kalite Kontrol</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e293b; color: white; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: #334155; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        h2 { text-align: center; color: #38bdf8; }
-        label { display: block; margin-top: 15px; font-weight: bold; }
-        input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 5px; border: 1px solid #64748b; background: #1e293b; color: white; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; background: #f59e0b; color: black; border: none; padding: 14px; margin-top: 20px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #d97706; }
-        #reader { width: 100%; margin-top: 15px; border-radius: 5px; overflow: hidden; background: #0f172a; }
-        .success { color: #4ade80; text-align: center; margin-top: 15px; font-weight: bold; }
+        .container { max-width: 500px; margin: 0 auto; background: #334155; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 25px; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 15px; }
+        input { width: 100%; padding: 14px; margin-top: 5px; border-radius: 5px; border: 2px solid #64748b; background: #1e293b; color: white; font-size: 18px; box-sizing: border-box; }
+        input:focus { border-color: #38bdf8; outline: none; }
+        button { width: 100%; background: #4ade80; color: black; border: none; padding: 15px; margin-top: 25px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #22c55e; }
+        .success { color: #4ade80; text-align: center; margin-top: 15px; font-weight: bold; font-size: 16px; }
+        .info-box { background: #0f172a; border-left: 4px solid #38bdf8; padding: 10px; margin-bottom: 15px; font-size: 13px; color: #94a3b8; }
     </style>
 </head>
 <body>
@@ -22,48 +22,54 @@
 <div class="container">
     <h2>NEXORA KALİTE KONTROL</h2>
     
+    <div class="info-box">
+        ℹ️ <b>Bilgi:</b> Barkod/QR okuyucu tabancanızı veya klavyenizi kullanarak kodu okutun. Sistem anında tanıyacaktır.
+    </div>
+    
     <label>Personel Adı:</label>
     <input type="text" id="personel" placeholder="Adınızı girin...">
     
-    <label>QR Kamera Tarayıcı:</label>
-    <div id="reader"></div>
-    
-    <label>Okunan QR Kod:</label>
-    <input type="text" id="qrKod" placeholder="Kameraya okutun..." readonly>
+    <label>QR Kodu Okutun:</label>
+    <input type="text" id="qrKod" placeholder="Tabancayı buraya tetikleyin..." autofocus oninput="kodIsle(this.value)">
     
     <label>Ürün Modeli:</label>
-    <input type="text" id="model" placeholder="Otomatik dolacak...">
+    <input type="text" id="model" placeholder="Otomatik dolacak..." readonly style="background: #0f172a; color: #38bdf8;">
     
     <label>Seri Numarası:</label>
-    <input type="text" id="seriNo" placeholder="Otomatik dolacak...">
+    <input type="text" id="seriNo" placeholder="Otomatik dolacak..." readonly style="background: #0f172a; color: #38bdf8;">
     
     <button onclick="kaydet()">ONAYLA VE KAYDET</button>
     <div id="mesaj" class="success"></div>
 </div>
 
 <script>
+    // Örnek Veritabanımız
     const veritabani = {
         "KM-240-GOVDE": { model: "KM-240 Baza Gövde", seri: "00491827" },
         "KM-180-PANEL": { model: "KM-180 Ön Panel", seri: "00491811" },
         "KM-300-MEK": { model: "KM-300 Otomatik Mekanizma", seri: "00491950" }
     };
 
-    function onScanSuccess(decodedText, decodedResult) {
-        const temizKod = decodedText.trim().toUpperCase();
-        document.getElementById('qrKod').value = temizKod;
+    // Sayfa açıldığında imleci direkt QR kutusuna odaklar
+    window.onload = function() {
+        document.getElementById('qrKod').focus();
+    };
+
+    function kodIsle(deger) {
+        const temizKod = deger.trim().toUpperCase();
         
+        // Veritabanında eşleşme arıyoruz
         if (veritabani[temizKod]) {
             document.getElementById('model').value = veritabani[temizKod].model;
             document.getElementById('seriNo').value = veritabani[temizKod].seri;
-        } else {
-            document.getElementById('model').value = "Bilinmeyen Ürün: " + temizKod;
-            document.getElementById('seriNo').value = "Bulunamadı";
+            
+            // Kod başarıyla gelince otomatik kaydetme veya sesli uyarı eklenebilir
+        } else if (temizKod.length > 5) {
+            // Eğer uzun bir kod okundu ama veritabanında yoksa
+            document.getElementById('model').value = "Bilinmeyen Ürün (" + temizKod + ")";
+            document.getElementById('seriNo').value = "Kayıtsız Seri";
         }
     }
-
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
-    html5QrcodeScanner.render(onScanSuccess);
 
     function kaydet() {
         const p = document.getElementById('personel').value;
@@ -76,6 +82,7 @@
             return;
         }
 
+        // Yerel hafızaya (localStorage) kayıt yapıyoruz
         const kayitlar = JSON.parse(localStorage.getItem('kaliteKayitlari') || '[]');
         kayitlar.push({ personel: p, qr: q, model: m, seri: s, tarih: new Date().toLocaleString() });
         localStorage.setItem('kaliteKayitlari', JSON.stringify(kayitlar));
@@ -83,9 +90,11 @@
         document.getElementById('mesaj').innerText = "Kayıt başarıyla veritabanına işlendi!";
         setTimeout(() => { document.getElementById('mesaj').innerText = ""; }, 3000);
 
+        // Formu sıfırla ve yeniden QR kutusuna odaklan
         document.getElementById('qrKod').value = "";
         document.getElementById('model').value = "";
         document.getElementById('seriNo').value = "";
+        document.getElementById('qrKod').focus();
     }
 </script>
 
