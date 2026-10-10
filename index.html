@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexora Kalite Kontrol</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e293b; color: white; margin: 0; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: #334155; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
@@ -13,6 +14,7 @@
         button { width: 100%; background: #f59e0b; color: black; border: none; padding: 12px; margin-top: 20px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }
         button:hover { background: #d97706; }
         .success { color: #4ade80; text-align: center; margin-top: 10px; font-weight: bold; }
+        #reader { width: 100%; margin-top: 10px; border-radius: 5px; overflow: hidden; background: #1e293b; }
     </style>
 </head>
 <body>
@@ -23,8 +25,11 @@
     <label>Personel Adı:</label>
     <input type="text" id="personel" placeholder="Adınızı girin...">
     
-    <label>QR Kod (Okutun veya Yazın):</label>
-    <input type="text" id="qrKod" placeholder="QR kod buraya okunacak..." oninput="qrOkundu(this.value)">
+    <label>QR Kod Kamerası:</label>
+    <div id="reader"></div>
+    
+    <label>Okunan QR Kod:</label>
+    <input type="text" id="qrKod" placeholder="Kamera ile okutun..." readonly>
     
     <label>Ürün Modeli:</label>
     <input type="text" id="model" placeholder="Otomatik dolacak...">
@@ -37,7 +42,6 @@
 </div>
 
 <script>
-    // Örnek Veritabanımız (QR koduna göre otomatik doldurma için)
     const veritabani = {
         "KM-240-GOVDE": { model: "KM-240 Baza Gövde", seri: "00491827" },
         "KM-180-PANEL": { model: "KM-180 Ön Panel", seri: "00491811" },
@@ -46,19 +50,23 @@
 
     function qrKodunuIsle(kod) {
         const temizKod = kod.trim().toUpperCase();
+        document.getElementById('qrKod').value = temizKod;
         if (veritabani[temizKod]) {
             document.getElementById('model').value = veritabani[temizKod].model;
             document.getElementById('seriNo').value = veritabani[temizKod].seri;
         } else {
-            document.getElementById('model').value = "";
-            document.getElementById('seriNo').value = "";
+            document.getElementById('model').value = "Bilinmeyen Ürün";
+            document.getElementById('seriNo').value = "Bilinmeyen Seri";
         }
     }
 
-    // Mobil/tablet tarayıcı veya barkod cihazları için anlık tetikleme
-    document.getElementById('qrKod').addEventListener('input', (e) => {
-        qrKodunuIsle(e.target.value);
-    });
+    function onScanSuccess(decodedText, decodedResult) {
+        qrKodunuIsle(decodedText);
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", { fps: 10, qrbox: { width: 200, height: 200 } }, false);
+    html5QrcodeScanner.render(onScanSuccess);
 
     function kaydet() {
         const p = document.getElementById('personel').value;
@@ -71,7 +79,6 @@
             return;
         }
 
-        // Yerel hafızaya (localStorage) kayıt yapıyoruz ki tablet hafızasında tutulsun
         const kayitlar = JSON.parse(localStorage.getItem('kaliteKayitlari') || '[]');
         kayitlar.push({ personel: p, qr: q, model: m, seri: s, tarih: new Date().toLocaleString() });
         localStorage.setItem('kaliteKayitlari', JSON.stringify(kayitlar));
@@ -79,7 +86,6 @@
         document.getElementById('mesaj').innerText = "Kayıt başarıyla veritabanına işlendi!";
         setTimeout(() => { document.getElementById('mesaj').innerText = ""; }, 3000);
 
-        // Formu temizle
         document.getElementById('qrKod').value = "";
         document.getElementById('model').value = "";
         document.getElementById('seriNo').value = "";
