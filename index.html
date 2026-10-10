@@ -11,10 +11,12 @@
         h2 { text-align: center; color: #38bdf8; }
         label { display: block; margin-top: 15px; font-weight: bold; }
         input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #64748b; background: #1e293b; color: white; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; background: #f59e0b; color: black; border: none; padding: 12px; margin-top: 20px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #d97706; }
+        button#startScanBtn { width: 100%; background: #f59e0b; color: black; border: none; padding: 16px; margin: 20px 0; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        button#startScanBtn:hover { background: #d97706; }
+        button#kaydetBtn { width: 100%; background: #4ade80; color: black; border: none; padding: 12px; margin-top: 20px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        button#kaydetBtn:hover { background: #22c55e; }
         .success { color: #4ade80; text-align: center; margin-top: 10px; font-weight: bold; }
-        #reader { width: 100%; margin-top: 10px; border-radius: 5px; overflow: hidden; background: #1e293b; }
+        #reader { width: 100%; margin-top: 10px; border-radius: 5px; overflow: hidden; background: #1e293b; display: none; }
     </style>
 </head>
 <body>
@@ -25,11 +27,14 @@
     <label>Personel Adı:</label>
     <input type="text" id="personel" placeholder="Adınızı girin...">
     
-    <label>QR Kod Kamerası:</label>
+    <!-- YENİ BUTON: Kamerayı manuel başlatmak için -->
+    <button id="startScanBtn" onclick="startCamera()">KAMERAYI BAŞLAT</button>
+    
+    <!-- Kamera görüntüsünün alanı -->
     <div id="reader"></div>
     
     <label>Okunan QR Kod:</label>
-    <input type="text" id="qrKod" placeholder="Kamera ile okutun..." readonly>
+    <input type="text" id="qrKod" placeholder="Kod okutun..." readonly>
     
     <label>Ürün Modeli:</label>
     <input type="text" id="model" placeholder="Otomatik dolacak...">
@@ -37,7 +42,7 @@
     <label>Seri Numarası:</label>
     <input type="text" id="seriNo" placeholder="Otomatik dolacak...">
     
-    <button onclick="kaydet()">ONAYLA VE KAYDET</button>
+    <button id="kaydetBtn" onclick="kaydet()">ONAYLA VE KAYDET</button>
     <div id="mesaj" class="success"></div>
 </div>
 
@@ -47,6 +52,8 @@
         "KM-180-PANEL": { model: "KM-180 Ön Panel", seri: "00491811" },
         "KM-300-MEK": { model: "KM-300 Otomatik Mekanizma", seri: "00491950" }
     };
+
+    let html5QrcodeScanner = null;
 
     function qrKodunuIsle(kod) {
         const temizKod = kod.trim().toUpperCase();
@@ -64,9 +71,18 @@
         qrKodunuIsle(decodedText);
     }
 
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader", { fps: 10, qrbox: { width: 200, height: 200 } }, false);
-    html5QrcodeScanner.render(onScanSuccess);
+    function startCamera() {
+        // Butonu gizle ve kamera alanını göster
+        document.getElementById('startScanBtn').style.display = 'none';
+        document.getElementById('reader').style.display = 'block';
+
+        // Kamerayı başlat
+        if (!html5QrcodeScanner) {
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", { fps: 10, qrbox: { width: 200, height: 200 } }, false);
+            html5QrcodeScanner.render(onScanSuccess);
+        }
+    }
 
     function kaydet() {
         const p = document.getElementById('personel').value;
