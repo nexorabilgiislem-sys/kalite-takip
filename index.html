@@ -3,17 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexora Kalite Kontrol</title>
+    <title>Nexora Kalite Kontrol - Akıllı Doğrulama</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e293b; color: white; margin: 0; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: #334155; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        h2 { text-align: center; color: #38bdf8; margin-bottom: 25px; }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 20px; }
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 15px; }
         input { width: 100%; padding: 14px; margin-top: 5px; border-radius: 5px; border: 2px solid #64748b; background: #1e293b; color: white; font-size: 18px; box-sizing: border-box; }
         input:focus { border-color: #38bdf8; outline: none; }
-        button { width: 100%; background: #4ade80; color: black; border: none; padding: 15px; margin-top: 25px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #22c55e; }
+        
+        /* Durum Renkleri */
+        .input-gecerli { border-color: #4ade80 !important; background: #064e3b !important; }
+        .input-gecersiz { border-color: #f87171 !important; background: #7f1d1d !important; }
+
+        button { width: 100%; background: #4ade80; color: black; border: none; padding: 15px; margin-top: 25px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        button:hover:not(:disabled) { background: #22c55e; }
+        button:disabled { background: #64748b; color: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
+
         .success { color: #4ade80; text-align: center; margin-top: 15px; font-weight: bold; font-size: 16px; }
+        .error { color: #f87171; text-align: center; margin-top: 10px; font-weight: bold; font-size: 15px; }
         .info-box { background: #0f172a; border-left: 4px solid #38bdf8; padding: 10px; margin-bottom: 15px; font-size: 13px; color: #94a3b8; }
     </style>
 </head>
@@ -23,51 +31,82 @@
     <h2>NEXORA KALİTE KONTROL</h2>
     
     <div class="info-box">
-        ℹ️ <b>Bilgi:</b> Barkod/QR okuyucu tabancanızı veya klavyenizi kullanarak kodu okutun. Sistem anında tanıyacaktır.
+        ℹ️ <b>Sistem Notu:</b> Barkod tabancasıyla okutun veya klavyeden yazın. Tanımsız kodlar otomatik reddedilir.
     </div>
     
     <label>Personel Adı:</label>
     <input type="text" id="personel" placeholder="Adınızı girin...">
     
-    <label>QR Kodu Okutun:</label>
-    <input type="text" id="qrKod" placeholder="Tabancayı buraya tetikleyin..." autofocus oninput="kodIsle(this.value)">
+    <label>QR / Barkod Kodu:</label>
+    <input type="text" id="qrKod" placeholder="Kodu buraya okutun veya yazın..." autofocus oninput="kodDogrula(this.value)">
     
+    <div id="hataMesaji" class="error"></div>
+
     <label>Ürün Modeli:</label>
     <input type="text" id="model" placeholder="Otomatik dolacak..." readonly style="background: #0f172a; color: #38bdf8;">
     
     <label>Seri Numarası:</label>
     <input type="text" id="seriNo" placeholder="Otomatik dolacak..." readonly style="background: #0f172a; color: #38bdf8;">
     
-    <button onclick="kaydet()">ONAYLA VE KAYDET</button>
+    <!-- Başlangıçta buton kilitlidir, geçerli kod girilince açılır -->
+    <button id="kaydetBtn" onclick="kaydet()" disabled>ÖNCE GEÇERLİ BİR KOD OKUTUN</button>
     <div id="mesaj" class="success"></div>
 </div>
 
 <script>
-    // Örnek Veritabanımız
+    // --- GİZLİ YEREL VERİTABANIMIZ ---
+    // Fabrikanın geçerli ürün veritabanı buradadır. İnternete gerek duymaz.
     const veritabani = {
         "KM-240-GOVDE": { model: "KM-240 Baza Gövde", seri: "00491827" },
         "KM-180-PANEL": { model: "KM-180 Ön Panel", seri: "00491811" },
         "KM-300-MEK": { model: "KM-300 Otomatik Mekanizma", seri: "00491950" }
     };
 
-    // Sayfa açıldığında imleci direkt QR kutusuna odaklar
     window.onload = function() {
         document.getElementById('qrKod').focus();
     };
 
-    function kodIsle(deger) {
+    function kodDogrula(deger) {
         const temizKod = deger.trim().toUpperCase();
-        
-        // Veritabanında eşleşme arıyoruz
+        const qrInput = document.getElementById('qrKod');
+        const modelInput = document.getElementById('model');
+        const seriInput = document.getElementById('seriNo');
+        const kaydetBtn = document.getElementById('kaydetBtn');
+        const hataDiv = document.getElementById('hataMesaji');
+
+        // Kutucuk boşsa her şeyi sıfırla
+        if (temizKod === "") {
+            qrInput.className = "";
+            modelInput.value = "";
+            seriInput.value = "";
+            hataDiv.innerText = "";
+            kaydetBtn.disabled = true;
+            kaydetBtn.innerText = "ÖNCE GEÇERLİ BİR KOD OKUTUN";
+            return;
+        }
+
+        // --- KONTROL MEKANİZMASI ---
         if (veritabani[temizKod]) {
-            document.getElementById('model').value = veritabani[temizKod].model;
-            document.getElementById('seriNo').value = veritabani[temizKod].seri;
+            // 🟢 KOD GEÇERLİ
+            qrInput.className = "input-gecerli";
+            modelInput.value = veritabani[temid = veritabani[temizKod].model]; // Düzeltme
+            modelInput.value = veritabani[temizKod].model;
+            seriInput.value = veritabani[temizKod].seri;
+            hataDiv.innerText = "";
             
-            // Kod başarıyla gelince otomatik kaydetme veya sesli uyarı eklenebilir
-        } else if (temizKod.length > 5) {
-            // Eğer uzun bir kod okundu ama veritabanında yoksa
-            document.getElementById('model').value = "Bilinmeyen Ürün (" + temizKod + ")";
-            document.getElementById('seriNo').value = "Kayıtsız Seri";
+            // Kaydet butonunu aktif et
+            kaydetBtn.disabled = false;
+            kaydetBtn.innerText = "ONAYLA VE KAYDET";
+        } else {
+            // 🔴 KOD GEÇERSİZ VEYA HATALI
+            qrInput.className = "input-gecersiz";
+            modelInput.value = "GEÇERSİZ ÜRÜN!";
+            seriInput.value = "HATA";
+            hataDiv.innerText = "⚠️ Bu kod veritabanında bulunamadı! Geçersiz ürün.";
+            
+            // Kaydet butonunu kilitle
+            kaydetBtn.disabled = true;
+            kaydetBtn.innerText = "GEÇERSİZ KOD - KAYDEDİLEMEZ";
         }
     }
 
@@ -77,23 +116,26 @@
         const m = document.getElementById('model').value;
         const s = document.getElementById('seriNo').value;
 
-        if(!p || !q || !m || !s) {
-            alert("Lütfen tüm alanların dolu olduğundan emin olun!");
+        if(!p || !q) {
+            alert("Lütfen personel adını girdiğinizden emin olun!");
             return;
         }
 
-        // Yerel hafızaya (localStorage) kayıt yapıyoruz
+        // Yerel hafızaya (localStorage) başarılı kaydı at
         const kayitlar = JSON.parse(localStorage.getItem('kaliteKayitlari') || '[]');
         kayitlar.push({ personel: p, qr: q, model: m, seri: s, tarih: new Date().toLocaleString() });
         localStorage.setItem('kaliteKayitlari', JSON.stringify(kayitlar));
 
-        document.getElementById('mesaj').innerText = "Kayıt başarıyla veritabanına işlendi!";
+        document.getElementById('mesaj').innerText = "Kayıt başarıyla sisteme işlendi!";
         setTimeout(() => { document.getElementById('mesaj').innerText = ""; }, 3000);
 
-        // Formu sıfırla ve yeniden QR kutusuna odaklan
+        // Formu temizle ve yeniden barkod okumaya hazır hale getir
         document.getElementById('qrKod').value = "";
         document.getElementById('model').value = "";
         document.getElementById('seriNo').value = "";
+        document.getElementById('qrKod').className = "";
+        document.getElementById('kaydetBtn').disabled = true;
+        document.getElementById('kaydetBtn').innerText = "ÖNCE GEÇERLİ BİR KOD OKUTUN";
         document.getElementById('qrKod').focus();
     }
 </script>
