@@ -4,21 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexora Kalite Kontrol</title>
-    <!-- Gelişmiş QR Okuma için güvenilir kütüphane -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e293b; color: white; margin: 0; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: #334155; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         h2 { text-align: center; color: #38bdf8; }
         label { display: block; margin-top: 15px; font-weight: bold; }
-        input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border-radius: 5px; border: 1px solid #64748b; background: #1e293b; color: white; font-size: 16px; box-sizing: border-box; }
-        .cam-box { background: #0f172a; border: 2px dashed #38bdf8; padding: 15px; text-align: center; border-radius: 8px; margin-top: 15px; }
-        .cam-box input[type="file"] { display: none; }
-        .cam-btn { background: #38bdf8; color: black; padding: 16px 20px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; display: inline-block; width: 100%; box-sizing: border-box; text-align: center; }
-        .cam-btn:hover { background: #0ea5e9; }
-        #loadingMesaj { color: #f59e0b; text-align: center; margin-top: 10px; display: none; }
-        button#kaydetBtn { width: 100%; background: #4ade80; color: black; border: none; padding: 14px; margin-top: 25px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        button#kaydetBtn:hover { background: #22c55e; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 5px; border: 1px solid #64748b; background: #1e293b; color: white; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; background: #f59e0b; color: black; border: none; padding: 14px; margin-top: 20px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #d97706; }
+        #reader { width: 100%; margin-top: 15px; border-radius: 5px; overflow: hidden; background: #0f172a; }
         .success { color: #4ade80; text-align: center; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
@@ -30,14 +25,11 @@
     <label>Personel Adı:</label>
     <input type="text" id="personel" placeholder="Adınızı girin...">
     
-    <div class="cam-box">
-        <label for="kameraInput" class="cam-btn">📷 QR KODU ÇEK VE OKUT</label>
-        <input type="file" id="kameraInput" accept="image/*" capture="environment" onchange="qrOku(event)">
-        <div id="loadingMesaj">Resim işleniyor, lütfen bekleyin...</div>
-    </div>
+    <label>QR Kamera Tarayıcı:</label>
+    <div id="reader"></div>
     
     <label>Okunan QR Kod:</label>
-    <input type="text" id="qrKod" placeholder="Kod buraya gelecek..." readonly>
+    <input type="text" id="qrKod" placeholder="Kameraya okutun..." readonly>
     
     <label>Ürün Modeli:</label>
     <input type="text" id="model" placeholder="Otomatik dolacak...">
@@ -45,53 +37,33 @@
     <label>Seri Numarası:</label>
     <input type="text" id="seriNo" placeholder="Otomatik dolacak...">
     
-    <button id="kaydetBtn" onclick="kaydet()">ONAYLA VE KAYDET</button>
+    <button onclick="kaydet()">ONAYLA VE KAYDET</button>
     <div id="mesaj" class="success"></div>
 </div>
 
 <script>
-    // Örnek Veritabanımız
     const veritabani = {
         "KM-240-GOVDE": { model: "KM-240 Baza Gövde", seri: "00491827" },
         "KM-180-PANEL": { model: "KM-180 Ön Panel", seri: "00491811" },
         "KM-300-MEK": { model: "KM-300 Otomatik Mekanizma", seri: "00491950" }
     };
 
-    function qrOku(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        // Yükleniyor mesajını göster
-        document.getElementById('loadingMesaj').style.display = 'block';
-        document.getElementById('qrKod').value = "";
-        document.getElementById('model').value = "";
-        document.getElementById('seriNo').value = "";
-
-        // Html5Qrcode kütüphanesini kullanarak resim dosyasını tara
-        const html5QrCode = new Html5Qrcode("kameraInput"); // Dummy element
+    function onScanSuccess(decodedText, decodedResult) {
+        const temizKod = decodedText.trim().toUpperCase();
+        document.getElementById('qrKod').value = temizKod;
         
-        html5QrCode.scanFile(file, true)
-            .then(decodedText => {
-                // Başarılı tarama
-                document.getElementById('loadingMesaj').style.display = 'none';
-                const temizKod = decodedText.trim().toUpperCase();
-                document.getElementById('qrKod').value = temizKod;
-                
-                if (veritabani[temizKod]) {
-                    document.getElementById('model').value = veritabani[temizKod].model;
-                    document.getElementById('seriNo').value = veritabani[temizKod].seri;
-                } else {
-                    document.getElementById('model').value = "Bilinmeyen Ürün: " + temizKod;
-                    document.getElementById('seriNo').value = "Bulunamadı";
-                }
-            })
-            .catch(err => {
-                // Tarama başarısız
-                document.getElementById('loadingMesaj').style.display = 'none';
-                alert("QR kod algılanamadı! Lütfen daha net, düzgün ve kodu tam ortalayacak şekilde bir fotoğraf çekin.");
-                console.error(`QR tarama hatası: ${err}`);
-            });
+        if (veritabani[temizKod]) {
+            document.getElementById('model').value = veritabani[temizKod].model;
+            document.getElementById('seriNo').value = veritabani[temizKod].seri;
+        } else {
+            document.getElementById('model').value = "Bilinmeyen Ürün: " + temizKod;
+            document.getElementById('seriNo').value = "Bulunamadı";
+        }
     }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+    html5QrcodeScanner.render(onScanSuccess);
 
     function kaydet() {
         const p = document.getElementById('personel').value;
@@ -111,7 +83,6 @@
         document.getElementById('mesaj').innerText = "Kayıt başarıyla veritabanına işlendi!";
         setTimeout(() => { document.getElementById('mesaj').innerText = ""; }, 3000);
 
-        // Formu temizle
         document.getElementById('qrKod').value = "";
         document.getElementById('model').value = "";
         document.getElementById('seriNo').value = "";
