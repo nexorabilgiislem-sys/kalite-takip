@@ -1,7 +1,36 @@
+name: NexoraBaza_KK
+description: "YATSAN Kalite Kontrol ve Takip Sistemi"
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
 dependencies:
   flutter:
     sdk: flutter
+  
+  # SQLite veritabanı paketi (100.000 kayıt için)
   sqflite: ^2.3.0
+  
+  # Dosya yolları yönetimi için
   path: ^1.8.3
+  
+  # Google Drive / Sunucudan JSON listesini çekmek için
   http: ^1.2.0
-  mobile_scanner: ^3.5.0 # Kamera/Karekod okutmak için en hızlısı
+  
+  # Hızlı ve kararlı karekod / kamera okuma paketi
+  mobile_scanner: ^3.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Eğer uygulamanın içinde statik bir başlangıç db veya asset dosyası tutacaksan buraya ekleyebilirsin
+  # assets:
+  #   - assets/
