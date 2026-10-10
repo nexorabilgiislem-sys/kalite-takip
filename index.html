@@ -6,27 +6,28 @@
     <title>Nexora Kalite Kontrol</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #1e293b; color: white; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: 0 auto; background: #334155; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        h2 { text-align: center; color: #38bdf8; margin-bottom: 20px; }
-        label { display: block; margin-top: 15px; font-weight: bold; font-size: 15px; }
-        input { width: 100%; padding: 14px; margin-top: 5px; border-radius: 5px; border: 2px solid #64748b; background: #1e293b; color: white; font-size: 18px; box-sizing: border-box; }
-        input:focus { border-color: #38bdf8; outline: none; }
+        .container { max-width: 500px; margin: 0 auto; background: #334155; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 15px; }
+        label { display: block; margin-top: 12px; font-weight: bold; font-size: 14px; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border-radius: 5px; border: 2px solid #64748b; background: #1e293b; color: white; font-size: 16px; box-sizing: border-box; }
         
         /* Durum Renkleri */
         .input-gecerli { border-color: #4ade80 !important; background: #064e3b !important; }
         .input-gecersiz { border-color: #f87171 !important; background: #7f1d1d !important; }
 
-        .test-buttons { display: flex; gap: 10px; margin-top: 10px; }
-        .test-btn { flex: 1; background: #0f172a; color: #38bdf8; border: 1px solid #38bdf8; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        .test-btn:hover { background: #38bdf8; color: black; }
+        .video-container { position: relative; width: 100%; margin-top: 10px; border-radius: 8px; overflow: hidden; background: #0f172a; display: none; }
+        video { width: 100%; height: auto; display: block; }
+        
+        .cam-baslat-btn { background: #38bdf8; color: black; border: none; padding: 14px; width: 100%; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .cam-baslat-btn:hover { background: #0ea5e9; }
 
-        button#kaydetBtn { width: 100%; background: #4ade80; color: black; border: none; padding: 16px; margin-top: 25px; font-size: 18px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        button#kaydetBtn { width: 100%; background: #4ade80; color: black; border: none; padding: 14px; margin-top: 20px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; transition: 0.3s; }
         button#kaydetBtn:hover:not(:disabled) { background: #22c55e; }
         button#kaydetBtn:disabled { background: #64748b; color: #cbd5e1; cursor: not-allowed; opacity: 0.6; }
 
-        .success { color: #4ade80; text-align: center; margin-top: 15px; font-weight: bold; font-size: 16px; }
-        .error { color: #f87171; text-align: center; margin-top: 8px; font-weight: bold; font-size: 15px; }
-        .info-box { background: #0f172a; border-left: 4px solid #38bdf8; padding: 12px; margin-bottom: 15px; font-size: 14px; color: #94a3b8; line-height: 1.4; }
+        .success { color: #4ade80; text-align: center; margin-top: 10px; font-weight: bold; }
+        .error { color: #f87171; text-align: center; margin-top: 5px; font-weight: bold; font-size: 14px; }
+        .info-box { background: #0f172a; border-left: 4px solid #38bdf8; padding: 10px; margin-bottom: 10px; font-size: 13px; color: #94a3b8; }
     </style>
 </head>
 <body>
@@ -35,22 +36,22 @@
     <h2>NEXORA KALİTE KONTROL</h2>
     
     <div class="info-box">
-        ⚡ <b>Sistem Aktif:</b> Barkod tabancanızı okutun veya klavyeden yazın. Yanlış kodlar otomatik reddedilir, doğru kodlarda onay butonu açılır.
+        💡 <b>İpucu:</b> Barkod tabancanız varsa direkt kutuya okutun. Yoksa aşağıdaki <b>"Kamerayı Aç"</b> butonuna basarak canlı taratabilirsiniz.
     </div>
     
     <label>Personel Adı:</label>
     <input type="text" id="personel" placeholder="Adınızı girin...">
     
-    <label>QR / Barkod Kodu:</label>
-    <input type="text" id="qrKod" placeholder="Kodu buraya okutun..." autofocus oninput="kodDogrula(this.value)">
+    <!-- Canlı Kamera Başlatma Butonu -->
+    <button class="cam-baslat-btn" onclick="kameraBaslat()">📷 CANLI KAMERAYI AÇ</button>
     
-    <!-- Test Amaçlı Hızlı Butonlar -->
-    <div class="test-buttons">
-        <button class="test-btn" onclick="hizliDoldur('KM-240-GOVDE')">Test: KM-240</button>
-        <button class="test-btn" onclick="hizliDoldur('KM-180-PANEL')">Test: KM-180</button>
-        <button class="test-btn" onclick="hizliDoldur('HATALI-KOD')">Test: Yanlış Kod</button>
+    <div class="video-container" id="videoContainer">
+        <video id="preview" autoplay playsinline></video>
     </div>
-
+    
+    <label>Okunan / Girilen Kod:</label>
+    <input type="text" id="qrKod" placeholder="Kutudan veya kameradan dolacak..." oninput="kodDogrula(this.value)">
+    
     <div id="hataMesaji" class="error"></div>
 
     <label>Ürün Modeli:</label>
@@ -71,15 +72,69 @@
         "KM-300-MEK": { model: "KM-300 Otomatik Mekanizma", seri: "00491950" }
     };
 
-    window.onload = function() {
-        document.getElementById('qrKod').focus();
-    };
+    let streamObj = null;
+    let scanning = false;
 
-    function hizliDoldur(kod) {
-        document.getElementById('qrKod').value = kod;
-        kodDogrula(kod);
+    // Modern Yerel Barkod Tarayıcı (Fotoğraf çekmeden canlı okur)
+    async function kameraBaslat() {
+        const videoElement = document.getElementById('preview');
+        const videoContainer = document.getElementById('videoContainer');
+
+        if (!('BarcodeDetector' in window)) {
+            alert("Tarayıcınız canlı barkod tarayıcısını desteklemiyor. Lütfen barkod tabancası kullanın veya elle yazın.");
+            return;
+        }
+
+        videoContainer.style.display = 'block';
+
+        try {
+            streamObj = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } 
+            });
+            videoElement.srcObject = streamObj;
+            await videoElement.play();
+            
+            scanning = true;
+            taraGozle(videoElement);
+        } catch (err) {
+            alert("Kamera başlatılamadı: " + err.message);
+        }
     }
 
+    async function taraGozle(video) {
+        if (!scanning) return;
+        
+        try {
+            const barcodeDetector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'ean_13'] });
+            const barcodes = await barcodeDetector.detect(video);
+            
+            if (barcodes.length > 0) {
+                const okunanDeger = barcodes[0].rawValue;
+                document.getElementById('qrKod').value = okunanDeger;
+                kodDogrula(okunanDeger);
+                
+                // Kamerayı durdur ve gizle
+                kameraDurdur();
+                return;
+            }
+        } catch (e) {
+            // Tarama hatası sessizce geçilir, döngü devam eder
+        }
+        
+        if (scanning) {
+            requestAnimationFrame(() => taraGozle(video));
+        }
+    }
+
+    function kameraDurdur() {
+        scanning = false;
+        if (streamObj) {
+            streamObj.getTracks().forEach(track => track.stop());
+        }
+        document.getElementById('videoContainer').style.display = 'none';
+    }
+
+    // Kod Doğrulama ve Filtreleme Mekanizması
     function kodDogrula(deger) {
         const temizKod = deger.trim().toUpperCase();
         const qrInput = document.getElementById('qrKod');
@@ -99,7 +154,7 @@
         }
 
         if (veritabani[temizKod]) {
-            // 🟢 KOD GEÇERLİ
+            // 🟢 GEÇERLİ KOD
             qrInput.className = "input-gecerli";
             modelInput.value = veritabani[temizKod].model;
             seriInput.value = veritabani[temizKod].seri;
@@ -108,11 +163,11 @@
             kaydetBtn.disabled = false;
             kaydetBtn.innerText = "ONAYLA VE KAYDET";
         } else {
-            // 🔴 KOD GEÇERSİZ
+            // 🔴 GEÇERSİZ KOD (Reddedilir)
             qrInput.className = "input-gecersiz";
             modelInput.value = "GEÇERSİZ ÜRÜN!";
             seriInput.value = "HATA";
-            hataDiv.innerText = "⚠️ Bu kod veritabanında yok! Geçersiz ürün, kaydedilemez.";
+            hataDiv.innerText = "⚠️ Bu kod veritabanında yok! Geçersiz ürün.";
             
             kaydetBtn.disabled = true;
             kaydetBtn.innerText = "GEÇERSİZ KOD - KİLİTLİ";
@@ -137,13 +192,13 @@
         document.getElementById('mesaj').innerText = "Kayıt başarıyla sisteme işlendi!";
         setTimeout(() => { document.getElementById('mesaj').innerText = ""; }, 3000);
 
+        // Formu sıfırla
         document.getElementById('qrKod').value = "";
         document.getElementById('model').value = "";
         document.getElementById('seriNo').value = "";
         document.getElementById('qrKod').className = "";
-        document.getElementById('kaydetBtn').disabled = true;
-        document.getElementById('kaydetBtn').innerText = "ÖNCE GEÇERLİ BİR KOD OKUTUN";
-        document.getElementById('qrKod').focus();
+        kaydetBtn.disabled = true;
+        kaydetBtn.innerText = "ÖNCE GEÇERLİ BİR KOD OKUTUN";
     }
 </script>
 
