@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexora Kalite Kontrol</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #1e293b; color: white; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: #334155; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h2 { text-align: center; color: #38bdf8; }
+        label { display: block; margin-top: 15px; font-weight: bold; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #64748b; background: #1e293b; color: white; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; background: #f59e0b; color: black; border: none; padding: 12px; margin-top: 20px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #d97706; }
+        .success { color: #4ade80; text-align: center; margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>NEXORA KALİTE KONTROL</h2>
+    
+    <label>Personel Adı:</label>
+    <input type="text" id="personel" placeholder="Adınızı girin...">
+    
+    <label>QR Kod (Okutun veya Yazın):</label>
+    <input type="text" id="qrKod" placeholder="QR kod buraya okunacak..." oninput="qrOkundu(this.value)">
+    
+    <label>Ürün Modeli:</label>
+    <input type="text" id="model" placeholder="Otomatik dolacak...">
+    
+    <label>Seri Numarası:</label>
+    <input type="text" id="seriNo" placeholder="Otomatik dolacak...">
+    
+    <button onclick="kaydet()">ONAYLA VE KAYDET</button>
+    <div id="mesaj" class="success"></div>
+</div>
+
+<script>
+    // Örnek Veritabanımız (QR koduna göre otomatik doldurma için)
+    const veritabani = {
+        "KM-240-GOVDE": { model: "KM-240 Baza Gövde", seri: "00491827" },
+        "KM-180-PANEL": { model: "KM-180 Ön Panel", seri: "00491811" },
+        "KM-300-MEK": { model: "KM-300 Otomatik Mekanizma", seri: "00491950" }
+    };
+
+    function qrKodunuIsle(kod) {
+        const temizKod = kod.trim().toUpperCase();
+        if (veritabani[temizKod]) {
+            document.getElementById('model').value = veritabani[temizKod].model;
+            document.getElementById('seriNo').value = veritabani[temizKod].seri;
+        } else {
+            document.getElementById('model').value = "";
+            document.getElementById('seriNo').value = "";
+        }
+    }
+
+    // Mobil/tablet tarayıcı veya barkod cihazları için anlık tetikleme
+    document.getElementById('qrKod').addEventListener('input', (e) => {
+        qrKodunuIsle(e.target.value);
+    });
+
+    function kaydet() {
+        const p = document.getElementById('personel').value;
+        const q = document.getElementById('qrKod').value;
+        const m = document.getElementById('model').value;
+        const s = document.getElementById('seriNo').value;
+
+        if(!p || !q || !m || !s) {
+            alert("Lütfen tüm alanların dolu olduğundan emin olun!");
+            return;
+        }
+
+        // Yerel hafızaya (localStorage) kayıt yapıyoruz ki tablet hafızasında tutulsun
+        const kayitlar = JSON.parse(localStorage.getItem('kaliteKayitlari') || '[]');
+        kayitlar.push({ personel: p, qr: q, model: m, seri: s, tarih: new Date().toLocaleString() });
+        localStorage.setItem('kaliteKayitlari', JSON.stringify(kayitlar));
+
+        document.getElementById('mesaj').innerText = "Kayıt başarıyla veritabanına işlendi!";
+        setTimeout(() => { document.getElementById('mesaj').innerText = ""; }, 3000);
+
+        // Formu temizle
+        document.getElementById('qrKod').value = "";
+        document.getElementById('model').value = "";
+        document.getElementById('seriNo').value = "";
+    }
+</script>
+
+</body>
+</html>
